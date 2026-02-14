@@ -1,1 +1,142 @@
-1
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>速度参数计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ffe9;
+            border-radius: 5px;
+            display: none;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>辊子参数计算器</h1>
+        <form id="calcForm">
+            <label for="diameter">直径 (mm):</label>
+            <input type="number" id="diameter" required min="0">
+
+            <label for="ratio">减速比 (i):</label>
+            <input type="number" id="ratio" required min="1" step="0.1">
+
+            <label for="inputType">输入类型:</label>
+            <select id="inputType">
+                <option value="speed">线速度 (m/min)</option>
+                <option value="rpm">转速 (RPM, 电机转速)</option>
+            </select>
+
+            <label for="inputValue" id="inputLabel">输入值:</label>
+            <input type="number" id="inputValue" required min="0">
+
+            <button type="button" onclick="calculate()">计算</button>
+        </form>
+        <div id="results">
+            <div class="result-item"><strong>辊子转速 (RPM):</strong> <span id="rollerRpm"></span></div>
+            <div class="result-item"><strong>线速度 (m/min):</strong> <span id="linearSpeed"></span></div>
+            <div class="result-item"><strong>转一圈时间 (秒):</strong> <span id="timePerRev"></span></div>
+        </div>
+    </div>
+
+    <script>
+        const inputTypeSelect = document.getElementById('inputType');
+        const inputLabel = document.getElementById('inputLabel');
+
+        inputTypeSelect.addEventListener('change', () => {
+            if (inputTypeSelect.value === 'speed') {
+                inputLabel.textContent = '线速度 (m/min):';
+            } else {
+                inputLabel.textContent = '转速 (RPM, 电机转速):';
+            }
+        });
+
+        function calculate() {
+            const d = parseFloat(document.getElementById('diameter').value); // mm
+            const i = parseFloat(document.getElementById('ratio').value);
+            const inputType = document.getElementById('inputType').value;
+            const inputValue = parseFloat(document.getElementById('inputValue').value);
+
+            if (isNaN(d) || isNaN(i) || isNaN(inputValue) || d <= 0 || i < 1 || inputValue <= 0) {
+                alert('请输入有效的正数值！');
+                return;
+            }
+
+            let n_roller, v;
+
+            if (inputType === 'speed') {
+                // 输入线速度 v，计算辊子转速 n_roller，然后电机转速 n = n_roller * i
+                v = inputValue;
+                n_roller = (v * 1000) / (Math.PI * d); // RPM (since v in m/min, d in mm -> /1000 to m)
+                // 但公式：v = (π * d_mm / 1000) * n_roller => n_roller = v / (π * d / 1000) = (v * 1000) / (π * d)
+            } else {
+                // 输入电机转速 n_motor，计算辊子转速 n_roller = n_motor / i，然后 v
+                const n_motor = inputValue;
+                n_roller = n_motor / i;
+                v = (Math.PI * d * n_roller) / 1000; // m/min
+            }
+
+            const t = 60 / n_roller; // seconds per revolution
+
+            document.getElementById('rollerRpm').textContent = n_roller.toFixed(2);
+            document.getElementById('linearSpeed').textContent = v.toFixed(2);
+            document.getElementById('timePerRev').textContent = t.toFixed(2);
+
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
